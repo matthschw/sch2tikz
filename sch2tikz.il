@@ -15,8 +15,6 @@
 
       (fprintf port "\\begin{tikzpicture}\n")
 
-
-
       (foreach net cv~>nets
 
         (setq
@@ -125,26 +123,107 @@
             );fprintf
           );when
 
-          (when (equal shape~>objType "label")
+          (when (or (equal shape~>objType "label") (equal shape~>objType "textDisplay"))
 
             (setq point (dbTransformPoint shape~>xy (list 0:0 "R0" mag)))
 
-
-
             (fprintf
               port
-              "\\node[anchor=south,inner sep=0pt,font=\\tiny\\tt] () at (%L,%L) {%s};\n" 
+              "\\node[anchor=south,inner sep=0pt,font=\\tiny\\tt,rotate=%L,anchor=%s] () at (%L,%L) {%s};\n" 
+              (case shape~>orient
+                ("R0"     0)
+                ("R90"   90)
+                ("R180" 180)
+                ("R270" 270)
+                (nil      0)
+              );case
+              (case shape~>justify
+                ("upperLeft"   "north east")
+                ("centerLeft"  "west")
+                ("lowerLeft"   "south west")
+                ("upperCenter" "north")
+                ("lowerCenter" "south")
+                ("upperRight" "north west")
+                ("centerRight" "east")
+                ("lowerRight" "south east")
+                (nil      "center")
+              );case
               (xCoord point)
               (yCoord point)
-              shape~>theLabel
+              (if shape~>theLabel
+                shape~>theLabel  
+                shape~>associate~>name 
+              );if
             );fprintf
           );when
         );unless 
-
-        (foreach item cv~>instances
-            
-        );foreach
       );foreach
+
+      (foreach inst cv~>instances
+
+        (setq master inst~>master)
+
+        (foreach shape master~>shapes
+
+          (when (equal shape~>objType "line")
+
+            (setq points (dbTransformPointList shape~>points inst~>transform))
+            (setq points (dbTransformPointList points (list 0:0 "R0" mag)))
+
+            (fprintf
+              port
+              "\\draw[] %s;\n" 
+              (buildString
+                (foreach mapcar point points
+                  (lsprintf 
+                    "(%L,%L)"
+                    (xCoord point)
+                    (yCoord point)
+                  );lsprintf
+                );foreach
+                " -- "
+              );buildString
+            );fprintf
+          );when  
+
+          (when (and (equal shape~>objType "rect") (nequal shape~>lpp (list "instance" "drawing")))
+
+            (setq bBox (dbTransformBBox shape~>bBox inst~>transform))
+            (setq bBox (dbTransformBBox bBox (list 0:0 "R0" mag)))
+            (fprintf
+              port
+              "\\fill[] (%L,%L) rectangle (%L,%L);\n" 
+              (leftEdge bBox)
+              (bottomEdge bBox)
+              (rightEdge bBox)
+              (topEdge bBox)
+            );fprintf
+          );when 
+
+
+          (when (and (equal shape~>objType "polygon") (nequal shape~>lpp (list "instance" "drawing")))
+
+            (setq points (dbTransformPointList shape~>points inst~>transform))
+            (setq points (dbTransformPointList points (list 0:0 "R0" mag)))
+
+            (fprintf
+              port
+              "\\fill[] %s -- cycle;\n" 
+              (buildString
+                (foreach mapcar point points
+                  (lsprintf 
+                    "(%L,%L)"
+                    (xCoord point)
+                    (yCoord point)
+                  );lsprintf
+                );foreach
+                " -- "
+              );buildString
+            );fprintf
+          );when    
+        );foreach  
+      );foreach
+
       (fprintf port "\\end{tikzpicture}")
       (close port)
     else
