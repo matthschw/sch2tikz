@@ -44,7 +44,7 @@ Path to file where *tikzpicture* is created.
 
 - Schematic is monochrome
 - Labels are not exported
-- Exploting arc does not work
+- Exporting arc does not work
 
 ## Dependencies
 
