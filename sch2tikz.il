@@ -64,39 +64,9 @@
           port
           inst~>master~>shapes
           (list inst~>transform (list 0:0 "R0" mag))
+          ?inst inst
         );EDsch2tikzExportShapes
       );foreach
-
-      /*
-      (fprintf
-        port
-        "\\node[anchor=south,inner sep=0pt,font=\\tiny\\tt,rotate=%L,anchor=%s] () at (%L,%L) {%s};\n" 
-        (case shape~>orient
-          ("R0"     0)
-          ("R90"   90)
-          ("R180" 180)
-          ("R270" 270)
-          (nil      0)
-        );case
-        (case shape~>justify
-          ("upperLeft"   "north east")
-          ("centerLeft"  "west")
-          ("lowerLeft"   "south west")
-          ("upperCenter" "north")
-          ("lowerCenter" "south")
-          ("upperRight" "north west")
-          ("centerRight" "east")
-          ("lowerRight" "south east")
-          (nil      "center")
-        );case
-        (xCoord point)
-        (yCoord point)
-        (if shape~>theLabel
-          shape~>theLabel  
-          shape~>associate~>name 
-        );if
-      );fprintf
-      */
 
       (fprintf port "\\end{tikzpicture}")
       (close port)
@@ -108,7 +78,9 @@
   );let
 );defun
 
-(defun EDsch2tikzExportShapes (port shapes transformations)
+(defun EDsch2tikzExportShapes (port shapes transformations @key (inst nil))
+
+  inst
 
   (foreach shape shapes
 
@@ -147,7 +119,14 @@
           shape
           transformations
         );EDsch2tikzExportLine
-        nil
+      )
+      ("label"
+        ;(EDsch2tikzExportLabel
+        ;  port
+        ;  shape
+        ;  transformations
+        ;  ?inst inst
+        ;);EDsch2tikzExportLine
       )
       (t
         nil
@@ -266,6 +245,55 @@
   );let
 );defun EDsch2tikzExportPolygon
 
+(defun EDsch2tikzExportLabel (port label transformations @key (inst nil))
+
+  (let ((ignore nil) point)
+
+    inst
+
+    (unless (member label~>lpp ignore)
+
+      (setq point (EDsch2tikzTransformPoint label~>xy transformations))
+
+      (fprintf
+        port
+        "\\node[inner sep=0pt,font=\\tiny\\tt,rotate=%L,anchor=%s] () at (%L,%L) {%s};\n" 
+        (case label~>orient
+          ("R0"     0)
+          ("R90"   90)
+          ("R180" 180)
+          ("R270" 270)
+          (nil      0)
+        );case
+        (case label~>justify
+          ("upperLeft"   "north east")
+          ("centerLeft"  "west")
+          ("lowerLeft"   "south west")
+          ("upperCenter" "north")
+          ("lowerCenter" "south")
+          ("upperRight" "north west")
+          ("centerRight" "east")
+          ("lowerRight" "south east")
+          (nil          "center")
+        );case
+        (xCoord point)
+        (yCoord point)
+        (if label~>theLabel
+          label~>theLabel  
+          label~>associate~>name 
+        );if
+      );fprintf
+    );unless 
+  );let
+);defun EDsch2tikzExportLabel
+
+(defun EDsch2tikzTransformPoint (point transformations)
+  (foreach transformation transformations
+    (setq point (dbTransformPoint point transformation))   
+  );foreach
+  point
+);defun
+
 (defun EDsch2tikzTransformPoints (points transformations)
   (foreach transformation transformations
     (setq points (dbTransformPointList points transformation))   
@@ -279,5 +307,3 @@
   );foreach
   bBox
 );defun
-
-(EDsch2tikz (geGetWindowCellView) 2.0 "fig.tex")
