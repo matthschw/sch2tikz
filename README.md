@@ -22,9 +22,9 @@ The function ML2TIKZ must be invoked in the Command Interpreter Window (CIW).
 
 ``` scheme
 EDsch2tikz( 
-	cv
-	2.0
-	"sch.tex"
+  cv
+  2.0
+  "sch.tex"
 )=>path/nil
 ```
 ### Arguments
