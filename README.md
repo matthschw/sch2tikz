@@ -18,8 +18,6 @@ A more convenient way might be to add this load command in the `.cdsinit`.
 
 ## Usage
 
-The function ML2TIKZ must be invoked in the Command Interpreter Window (CIW).
-
 ``` scheme
 EDsch2tikz( 
   cv
