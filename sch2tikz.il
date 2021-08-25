@@ -1,4 +1,4 @@
-(defun EDsch2tikz (cv mag file)
+(defun EDsch2tikz (cv mag file "gfS")
   (let (port)
 
     (if
@@ -62,8 +62,9 @@
       */
 
       (fprintf port "\\end{tikzpicture}")
-
       (close port)
+      
+      (simplifyFilename file)
     else
       (error "[ED-SCH2TikZ] Provided Cellview is not a schematic")
     );if
