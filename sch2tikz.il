@@ -1,3 +1,40 @@
+/*=============================================================================*
+*
+*   sch2tikz
+*
+*   Purpose:    schematic to tikzpicture converter
+*
+*   Author:     Matthias Schweikardt
+*   Email:      matthias.schweikardt@reutlingen-university.de
+*
+*   Lint: IQ score is 100 (best is 100) 
+*         {sklint ?file "PATH")}
+*
+*   Revision:   2021-08-25 Created
+*
+*   Copyright 2021 Reutlingen University, Electronics & Drives
+*
+*   Permission is hereby granted, free of charge, to any person obtaining a 
+*   copy of this software and associated documentation files (the "Software"), 
+*   to deal in the Software without restriction, including without limitation 
+*   the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+*   and/or sell copies of the Software, and to permit persons to whom the 
+*   Software is furnished to do so, subject to the following conditions:
+*
+*   The above copyright notice and this permission notice shall be included in 
+*   all copies or substantial portions of the Software.
+*
+*   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+*   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+*   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL 
+*   THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+*   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+*   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+*   DEALINGS IN THE SOFTWARE.
+*
+*=============================================================================*/
+
+
 (defun EDsch2tikz (cv mag file "gfS")
   (let (port)
 
@@ -21,7 +58,7 @@
 
       (foreach inst cv~>instances
 
-        (fprintf port "%% %s\n" inst~>name)
+        ;(fprintf port "%% %s\n" inst~>name)
 
         (EDsch2tikzExportShapes
           port
@@ -63,7 +100,7 @@
 
       (fprintf port "\\end{tikzpicture}")
       (close port)
-      
+
       (simplifyFilename file)
     else
       (error "[ED-SCH2TikZ] Provided Cellview is not a schematic")
@@ -105,11 +142,11 @@
         );EDsch2tikzExportLine
       )     
       ("arc"
-        ;(EDsch2tikzExportArc
-        ;  port
-        ;  shape
-        ;  transformations
-        ;);EDsch2tikzExportLine
+        (EDsch2tikzExportArc
+          port
+          shape
+          transformations
+        );EDsch2tikzExportLine
         nil
       )
       (t
@@ -162,7 +199,7 @@
 );defun
 
 (defun EDsch2tikzExportArc (port arc transformations)
-  (let (bBox center (ignore nil) (fill '(("wire" "drawing"))))
+  (let (bBox center (ignore nil) (fill nil))
 
     (unless (member arc~>lpp ignore)
 
@@ -171,17 +208,16 @@
 
       (fprintf
         port
-        "\\%s[] (%L,%L) arc (%L:%L:%L and %L);\n" 
+        "\\%s[domain=%L:%L] plot ({%L+%L*cos(\\x)}, {%L+%L*sin(\\x)});\n" 
         (if (member arc~>lpp fill)
          "fill"   
           "draw"
         );if
+        arc~>startAngle/3.141592*180
+        arc~>stopAngle/3.141592*180
         (xCoord center)
-        (yCoord center)
-        ;arc~>startAngle/3.141592*180
-        ;arc~>stopAngle/3.141592*180
-        0 350
         (quotient (difference (rightEdge bBox) (leftEdge bBox)) 2.0)
+        (yCoord center)
         (quotient (difference (topEdge bBox) (bottomEdge bBox)) 2.0)
       );fprintf
     );unless 
