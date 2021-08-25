@@ -187,13 +187,13 @@
 
       (fprintf
         port
-        "\\%s[domain=%L:%L] plot ({%L+%L*cos(\\x)}, {%L+%L*sin(\\x)});\n" 
+        "\\%s[domain=%L:%L] plot ({%L+%L*cos(deg(\\x))}, {%L+%L*sin(deg(\\x))});\n" 
         (if (member arc~>lpp fill)
          "fill"   
           "draw"
         );if
-        arc~>startAngle/3.141592*180
-        arc~>stopAngle/3.141592*180
+        arc~>startAngle
+        arc~>stopAngle
         (xCoord center)
         (quotient (difference (rightEdge bBox) (leftEdge bBox)) 2.0)
         (yCoord center)
