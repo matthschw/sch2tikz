@@ -34,7 +34,21 @@
 *
 *=============================================================================*/
 
-
+;FUNCTION
+; EDsch2tikz
+;
+;Description:
+; This function exports a schematic in Cadence Virtuoso
+; to a tikzpicture
+;
+;Parameters:
+; cv           cellView, schematic cell view to be exported
+; mag          number, magnification
+; file         string, path to resulting tikzpicture
+;
+;Return:
+;  path        string, path to resulting tikzpicture
+;
 (defun EDsch2tikz (cv mag file "gfS")
   (let (port)
 
@@ -57,9 +71,6 @@
       );EDsch2tikzExportShapes
 
       (foreach inst cv~>instances
-
-        ;(fprintf port "%% %s\n" inst~>name)
-
         (EDsch2tikzExportShapes
           port
           inst~>master~>shapes
@@ -74,10 +85,28 @@
       (simplifyFilename file)
     else
       (error "[ED-SCH2TikZ] Provided Cellview is not a schematic")
+      nil
     );if
   );let
 );defun
 
+
+;FUNCTION
+; EDsch2tikzExportShapes
+;
+;Description:
+; This functions converts all elements of a list of shapes and
+; exports them to a port.
+;
+;Parameters:
+; port             port, where resulting TikZ code is exported
+; shapes           list, list of shapes to be exported
+; transformations  number, list of transformations
+; ?inst            instance, instance that contains the shapes
+;
+;Return:
+;  t               bool, always true
+;
 (defun EDsch2tikzExportShapes (port shapes transformations @key (inst nil))
 
   inst
@@ -133,10 +162,27 @@
       )
     );case
   );foreach
-);defun
 
+  t
+);defun EDsch2tikzExportShapes
+
+
+;FUNCTION
+; EDsch2tikzExportLine
+;
+;Description:
+; This functions converts a line in a schematic to a TikZ representation
+; and writes the code to a port.
+;
+;Parameters:
+; port             port, where resulting TikZ code is exported
+; line             line, line to be exported
+; transformations  list, list of transformations
+;
+;Return:
+;  t               bool, always true
+;
 (defun EDsch2tikzExportLine (port line transformations)
-
   (let ((ignore nil))
 
     (unless (member line~>lpp ignore)
@@ -150,10 +196,28 @@
           " -- "
         );buildString
       );fprintf
-    );unless 
-  );let
-);defun
+    );unless
 
+    t
+  );let
+);defun EDsch2tikzExportLine
+
+
+;FUNCTION
+; EDsch2tikzExportEllipse
+;
+;Description:
+; This functions converts an ellipse in a schematic to a TikZ representation
+; and writes the code to a port.
+;
+;Parameters:
+; port             port, where resulting TikZ code is exported
+; ellipse          ellipse, ellipse to be exported
+; transformations  list, list of transformations
+;
+;Return:
+;  t               bool, always true
+;
 (defun EDsch2tikzExportEllipse (port ellipse transformations)
   (let (bBox center (ignore nil) (fill '(("wire" "drawing"))))
 
@@ -177,6 +241,22 @@
   );let
 );defun
 
+
+;FUNCTION
+; EDsch2tikzExportArc
+;
+;Description:
+; This functions converts an arc in a schematic to a TikZ representation
+; and writes the code to a port.
+;
+;Parameters:
+; port             port, where resulting TikZ code is exported
+; ellipse          arc, arc to be exported
+; transformations  list, list of transformations
+;
+;Return:
+;  t               bool, always true
+;
 (defun EDsch2tikzExportArc (port arc transformations)
   (let (bBox center (ignore nil) (fill nil))
 
@@ -188,10 +268,7 @@
       (fprintf
         port
         "\\%s[domain=%L:%L] plot ({%L+%L*cos(deg(\\x))}, {%L+%L*sin(deg(\\x))});\n" 
-        (if (member arc~>lpp fill)
-         "fill"   
-          "draw"
-        );if
+        (if (member arc~>lpp fill) "fill" "draw")
         arc~>startAngle
         arc~>stopAngle
         (xCoord center)
@@ -201,8 +278,24 @@
       );fprintf
     );unless 
   );let
-);defun
+);defun EDsch2tikzExportArc
 
+
+;FUNCTION
+; EDsch2tikzExportRect
+;
+;Description:
+; This functions converts a rectangle in a schematic to a TikZ representation
+; and writes the code to a port.
+;
+;Parameters:
+; port             port, where resulting TikZ code is exported
+; rect             rectangle, rectangle to be exported
+; transformations  list, list of transformations
+;
+;Return:
+;  t               bool, always true
+;
 (defun EDsch2tikzExportRect (port rect transformations)
   (let (bBox (ignore '(("instance" "drawing"))) (fill '(("pin" "drawing"))))
 
@@ -213,17 +306,30 @@
       (fprintf
         port
         "\\%s[] (%L,%L) rectangle (%L,%L);\n" 
-        (if (member rect~>lpp fill)
-         "fill"   
-          "draw"
-        );if
+        (if (member rect~>lpp fill) "fill" "draw")
         (leftEdge bBox)  (bottomEdge bBox)
         (rightEdge bBox) (topEdge bBox)
       );fprintf
     );unless 
   );let
-);defun
+);defun EDsch2tikzExportRect
 
+
+;FUNCTION
+; EDsch2tikzExportPolygon
+;
+;Description:
+; This functions converts a polygon in a schematic to a TikZ representation
+; and writes the code to a port.
+;
+;Parameters:
+; port             port, where resulting TikZ code is exported
+; polygon          polygon, polygon to be exported
+; transformations  list, list of transformations
+;
+;Return:
+;  t               bool, always true
+;
 (defun EDsch2tikzExportPolygon (port polygon transformations)
   (let ((ignore nil))
 
@@ -287,23 +393,63 @@
   );let
 );defun EDsch2tikzExportLabel
 
+
+;FUNCTION
+; EDsch2tikzTransformPoint
+;
+;Description:
+; Transform a point wrt. a list of transformation
+;
+;Parameters:
+; point            list, point
+; transformations  list, list of transformations
+;
+;Return:
+; point            list, transformed point
+;
 (defun EDsch2tikzTransformPoint (point transformations)
   (foreach transformation transformations
     (setq point (dbTransformPoint point transformation))   
   );foreach
   point
-);defun
+);defun EDsch2tikzTransformPoint
 
+;FUNCTION
+; EDsch2tikzTransformPoints
+;
+;Description:
+; Transform a list of points wrt. a list of transformation
+;
+;Parameters:
+; point            list, list of points
+; transformations  list, list of transformations
+;
+;Return:
+; list             list, list of transformed points
+;
 (defun EDsch2tikzTransformPoints (points transformations)
   (foreach transformation transformations
     (setq points (dbTransformPointList points transformation))   
   );foreach
   points
-);defun
+);defun EDsch2tikzTransformPoints
 
+;FUNCTION
+; EDsch2tikzTransformBbox
+;
+;Description:
+; Transform a bounding box  wrt. a list of transformation
+;
+;Parameters:
+; bBox             list, bounding box
+; transformations  list, list of transformations
+;
+;Return:
+; bBox             list, transformed bounding box
+;
 (defun EDsch2tikzTransformBbox (bBox transformations)
   (foreach transformation transformations
     (setq bBox (dbTransformBBox bBox transformation))
   );foreach
   bBox
-);defun
+);defun EDsch2tikzTransformBbox
